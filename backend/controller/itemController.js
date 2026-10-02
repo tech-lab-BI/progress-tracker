@@ -38,6 +38,24 @@ exports.createItem = async (request, response, next) => {
   }
 };
 
+exports.updateItem = async (request, response, next) => {
+  try {
+    if (typeof request.body.done !== "boolean") {
+      return response.status(400).json({ message: "A boolean done value is required." });
+    }
+    const item = await Item.findOneAndUpdate(
+      { _id: request.params.id, type: "point" },
+      { done: request.body.done },
+      { new: true, runValidators: true },
+    );
+    if (!item) return response.status(404).json({ message: "Point not found." });
+    response.json(item);
+  } catch (error) {
+    if (error.name === "CastError") return response.status(400).json({ message: "Invalid item id." });
+    next(error);
+  }
+};
+
 exports.deleteItem = async (request, response, next) => {
   try {
     const root = await Item.findById(request.params.id);

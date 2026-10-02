@@ -10,3 +10,4 @@ async function request(url, options) {
 export const getItems = () => request(API_URL);
 export const createItem = (item) => request(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
 export const deleteItem = (id) => request(`${API_URL}/${id}`, { method: "DELETE" });
+export const updateItem = (id, changes) => request(`${API_URL}/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(changes) });

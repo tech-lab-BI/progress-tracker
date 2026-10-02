@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./component/Sidebar";
 import ProgressTree from "./component/ProgressTree";
-import { createItem, deleteItem, getItems } from "./service/apiCall";
+import { createItem, deleteItem, getItems, updateItem } from "./service/apiCall";
 import "./App.css";
 
 function App() {
@@ -32,13 +32,20 @@ function App() {
     await deleteItem(id);
     await refreshItems();
   };
-  // Local optimistic state until a PATCH endpoint is available.
-  const handlePointToggle = (id) =>
-    setItems((all) =>
-      all.map((item) =>
-        item._id === id ? { ...item, done: !item.done } : item,
-      ),
-    );
+  const handlePointToggle = async (id) => {
+    const point = items.find((item) => item._id === id);
+    if (!point) return;
+    const done = !point.done;
+    setError("");
+    setItems((all) => all.map((item) => item._id === id ? { ...item, done } : item));
+    try {
+      const saved = await updateItem(id, { done });
+      setItems((all) => all.map((item) => item._id === id ? saved : item));
+    } catch (requestError) {
+      setItems((all) => all.map((item) => item._id === id ? { ...item, done: point.done } : item));
+      setError(requestError.message || "Unable to save this point.");
+    }
+  };
 
   return (
     <div className="app-shell">
