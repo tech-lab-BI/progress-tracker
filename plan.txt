@@ -1,0 +1,7 @@
+improvent-----------
+by default uncollapsed
+percentage not show in phone - solved
+marked permanently save
+at any page operation page not refresh
+rename
+overall percentage

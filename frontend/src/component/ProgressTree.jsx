@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import TreeItem from "./TreeItem";
 
 export function buildTree(items) {
@@ -12,7 +13,33 @@ export function buildTree(items) {
   });
   return roots;
 }
-export default function ProgressTree({ items, onDelete, onPointToggle }) {
+export default function ProgressTree({
+  items,
+  onDelete,
+  onRename,
+  onPointToggle,
+}) {
+  const [expandedMap, setExpandedMap] = useState({});
+
+  useEffect(() => {
+    setExpandedMap((current) => {
+      const next = {};
+      Object.entries(current).forEach(([id, expanded]) => {
+        if (items.some((item) => String(item._id) === String(id))) {
+          next[id] = expanded;
+        }
+      });
+      return next;
+    });
+  }, [items]);
+
+  const toggleExpanded = (id) => {
+    setExpandedMap((current) => ({
+      ...current,
+      [id]: !current[id],
+    }));
+  };
+
   const tree = buildTree(items);
   if (!tree.length)
     return (
@@ -27,7 +54,11 @@ export default function ProgressTree({ items, onDelete, onPointToggle }) {
         <TreeItem
           key={item._id}
           item={item}
+          expanded={Boolean(expandedMap[item._id])}
+          expandedMap={expandedMap}
+          onToggle={toggleExpanded}
           onDelete={onDelete}
+          onRename={onRename}
           onPointToggle={onPointToggle}
         />
       ))}

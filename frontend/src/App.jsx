@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./component/Sidebar";
 import ProgressTree from "./component/ProgressTree";
-import { createItem, deleteItem, getItems, updateItem } from "./service/apiCall";
+import {
+  createItem,
+  deleteItem,
+  getItems,
+  updateItem,
+} from "./service/apiCall";
 import "./App.css";
+import Analysis from "./component/Analysis";
 
 function App() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const refreshItems = useCallback(async () => {
     setLoading(true);
@@ -27,22 +34,42 @@ function App() {
   const handleCreate = async (item) => {
     await createItem(item);
     await refreshItems();
+    setError("");
+    setNotice("Added");
+    window.clearTimeout(handleCreate.timeoutId);
+    handleCreate.timeoutId = window.setTimeout(() => setNotice(""), 1800);
   };
   const handleDelete = async (id) => {
     await deleteItem(id);
     await refreshItems();
+  };
+  const handleRename = async (id, name) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    try {
+      const saved = await updateItem(id, { name: trimmedName });
+      setItems((all) => all.map((item) => (item._id === id ? saved : item)));
+    } catch (requestError) {
+      setError(requestError.message || "Unable to rename this item.");
+    }
   };
   const handlePointToggle = async (id) => {
     const point = items.find((item) => item._id === id);
     if (!point) return;
     const done = !point.done;
     setError("");
-    setItems((all) => all.map((item) => item._id === id ? { ...item, done } : item));
+    setItems((all) =>
+      all.map((item) => (item._id === id ? { ...item, done } : item)),
+    );
     try {
       const saved = await updateItem(id, { done });
-      setItems((all) => all.map((item) => item._id === id ? saved : item));
+      setItems((all) => all.map((item) => (item._id === id ? saved : item)));
     } catch (requestError) {
-      setItems((all) => all.map((item) => item._id === id ? { ...item, done: point.done } : item));
+      setItems((all) =>
+        all.map((item) =>
+          item._id === id ? { ...item, done: point.done } : item,
+        ),
+      );
       setError(requestError.message || "Unable to save this point.");
     }
   };
@@ -56,16 +83,21 @@ function App() {
           <h1>Progress tracker</h1>
           <p>Build momentum, one completed point at a time.</p>
         </header>
+        {notice && (
+          <div className="status-message success-message">{notice}</div>
+        )}
         {error && <div className="status-message error-message">{error}</div>}
-        {loading ? (
+        {loading && items.length === 0 ? (
           <div className="status-message">Loading your tracker…</div>
         ) : (
           <ProgressTree
             items={items}
             onDelete={handleDelete}
+            onRename={handleRename}
             onPointToggle={handlePointToggle}
           />
         )}
+        <Analysis items={items} />
       </main>
     </div>
   );
